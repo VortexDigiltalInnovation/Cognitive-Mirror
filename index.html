@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Cognitive Ecosystem v5.4 (SunPower Real-Time Edition)</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#070a13">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #070a13;
+            --card-bg: #0f172a;
+            --card-border: #1e293b;
+            --accent-cyan: #38bdf8;
+            --accent-blue: #0ea5e9;
+            --accent-red: #f43f5e;
+            --accent-purple: #a855f7;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 16px; }
+        .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; padding-bottom: 40px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--card-border); }
+        header h1 { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; color: var(--accent-cyan); }
+
+        .card { background-color: var(--card-bg); border-radius: 20px; padding: 20px; border: 1px solid var(--card-border); position: relative; }
+        .card-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-sub); margin-bottom: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+
+        .hero-gauge { display: flex; justify-content: space-between; align-items: center; }
+        .gauge-number { font-size: 3.5rem; font-weight: 900; line-height: 1; }
+        .gauge-number span { font-size: 1.3rem; color: var(--accent-cyan); }
+
+        .bio-pills { display: flex; flex-direction: column; gap: 6px; text-align: right; }
+        .bio-pill { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--card-border); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; color: var(--text-sub); }
+        .bio-pill b { color: var(--text-main); }
+
+        .box-info { font-size: 0.88rem; line-height: 1.5; color: #cbd5e1; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
+        .box-red { background: rgba(244, 63, 94, 0.05); border-left: 4px solid var(--accent-red); }
+        .box-cyan { background: rgba(56, 189, 248, 0.05); border-left: 4px solid var(--accent-cyan); }
+        .box-purple { background: rgba(168, 85, 247, 0.05); border-left: 4px solid var(--accent-purple); }
+
+        /* Solar Real-Time Dashboard Widget */
+        .solar-card { border: 1px solid rgba(56, 189, 248, 0.3); background: linear-gradient(180deg, #0f172a 0%, #091121 100%); }
+        .solar-badge { font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-live { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-sim { background: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+
+        .solar-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .solar-item { background: rgba(30, 41, 59, 0.5); padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .solar-item-title { font-size: 0.68rem; color: var(--text-sub); font-weight: 600; text-transform: uppercase; }
+        .solar-item-val { font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+
+        /* Voice Bar Element */
+        .voice-card { background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid var(--accent-cyan); }
+        .mic-btn { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border: none; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; margin: 0 auto 10px auto; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4); transition: all 0.2s; }
+        .mic-btn.recording { background: var(--accent-red); animation: pulse 1.2s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+            70% { transform: scale(1.08); box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+
+        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .btn { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); color: #070a13; border: none; padding: 10px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 0.8rem; text-transform: uppercase; }
+        .btn-sub { background: #1e293b; color: var(--accent-cyan); }
+
+        canvas { max-height: 140px; margin-top: 4px; }
+            #pv-text { white-space: pre-line; }
+        .inp { width:100%; padding:10px; background:#070a13; border:1px solid #1e293b; color:#fff; border-radius:8px; margin-bottom:8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Cognitive Ecosystem v5.4</h1>
+        <div class="date" id="cur-date">--/--/----</div>
+    </header>
+
+    <!-- ASSISTENTE VOCALE INTEGRATO -->
+    <div class="card voice-card">
+        <div class="card-title">🎙️ Assistente Vocale Personalizzato</div>
+        <button class="mic-btn" id="mic-btn" onclick="toggleVoice()">🎙️</button>
+        <div style="font-size: 0.8rem; text-align: center; color: var(--text-sub);" id="voice-status">Tocca il microfono e parla (es. "Ho bevuto 500 ml d'acqua" o "Ho disegnato 45 minuti")</div>
+    </div>
+
+    <!-- SUNPOWER 8KWP REAL-TIME DASHBOARD -->
+    <div class="card solar-card">
+        <div class="card-title">
+            <span>☀️ SunPower Reserve 8kWp</span>
+            <span class="solar-badge badge-sim" id="solar-live-badge">CONNESSI...</span>
+        </div>
+
+        <div class="solar-grid">
+            <div class="solar-item">
+                <div class="solar-item-title">Fotovoltaico</div>
+                <div class="solar-item-val" id="solar-pv-val" style="color: #facc15;">-- kW</div>
+            </div>
+            <div class="solar-item">
+                <div class="solar-item-title">Batteria 10kWh</div>
+                <div class="solar-item-val" id="solar-batt-val" style="color: #34d399;">-- %</div>
+            </div>
+            <div class="solar-item">
+                <div class="solar-item-title">Consumo Casa</div>
+                <div class="solar-item-val" id="solar-load-val" style="color: #38bdf8;">-- kW</div>
+            </div>
+            <div class="solar-item">
+                <div class="solar-item-title">Scambio Rete</div>
+                <div class="solar-item-val" id="solar-grid-val" style="color: #a855f7;">-- kW</div>
+            </div>
+        </div>
+
+        <div class="box-info box-cyan" style="margin-top: 12px;" id="pv-text">Caricamento stato impianto...</div>
+        <div style="font-size: 0.85rem; color: var(--accent-green); margin-top: 6px;" id="garden-text">--</div>
+    </div>
+
+    <!-- Hero Readiness -->
+    <div class="card">
+        <div class="card-title">⚡ Training Readiness Index</div>
+        <div class="hero-gauge">
+            <div>
+                <div class="gauge-number" id="readiness-val">--<span>/100</span></div>
+            </div>
+            <div class="bio-pills">
+                <div class="bio-pill">Sonno: <b id="s-val">--</b>/5</div>
+                <div class="bio-pill">HRV: <b id="h-val">--</b>/5</div>
+                <div class="bio-pill">Stress: <b id="st-val">--</b>/5</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Check-in + Idratazione -->
+    <div class="card">
+        <div class="card-title">🌅 Check-in mattutino (1-5)</div>
+        <div class="btn-grid">
+            <select id="ci-sleep" class="inp"><option value="1">Sonno 1</option><option value="2">Sonno 2</option><option value="3" selected>Sonno 3</option><option value="4">Sonno 4</option><option value="5">Sonno 5</option></select>
+            <select id="ci-hrv" class="inp"><option value="1">HRV 1</option><option value="2">HRV 2</option><option value="3" selected>HRV 3</option><option value="4">HRV 4</option><option value="5">HRV 5</option></select>
+            <select id="ci-stress" class="inp"><option value="1">Stress 1</option><option value="2">Stress 2</option><option value="3" selected>Stress 3</option><option value="4">Stress 4</option><option value="5">Stress 5</option></select>
+        </div>
+        <button class="btn" style="width:100%;margin-top:8px" onclick="submitCheckin()">Calcola readiness</button>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><span>💧 Idratazione</span><span id="water-val">-- / -- ml</span></div>
+        <div style="height:8px;background:#1e293b;border-radius:6px;overflow:hidden"><div id="water-bar" style="height:100%;width:0;background:var(--accent-cyan);transition:width .3s"></div></div>
+        <div class="btn-grid">
+            <button class="btn btn-sub" onclick="logWater(250)">+250</button>
+            <button class="btn btn-sub" onclick="logWater(500)">+500</button>
+            <button class="btn btn-sub" onclick="logWater(1000)">+1000</button>
+        </div>
+    </div>
+
+    <!-- Analisi Specchio -->
+    <div class="card">
+        <div class="card-title">🎯 Analisi Strategica (Specchio)</div>
+        <div class="box-info box-red" id="directive-text">Caricamento...</div>
+    </div>
+
+    <!-- Disegno Anatomia (Asaro) & WH40K -->
+    <div class="card">
+        <div class="card-title">🎨 Creative Focus (Asaro & WH40K)</div>
+        <div class="box-info box-purple" id="creative-text">Frequenza hobby...</div>
+        <div class="btn-grid">
+            <button class="btn btn-sub" onclick="logHobby(30)">+30 Min</button>
+            <button class="btn btn-sub" onclick="logHobby(45)">+45 Min</button>
+            <button class="btn btn-sub" onclick="logHobby(60)">+60 Min</button>
+        </div>
+    </div>
+
+    <!-- Trend Chart -->
+    <div class="card">
+        <div class="card-title">📈 Trend Indice Cognitivo</div>
+        <canvas id="chart"></canvas>
+    </div>
+
+    <!-- Config Worker -->
+    <div class="card">
+        <div class="card-title">⚙️ Configurazione Worker</div>
+        <input type="url" id="w-url" class="inp" placeholder="https://tuo-worker.workers.dev">
+        <input type="password" id="w-token" class="inp" placeholder="API token (se configurato)" autocomplete="off">
+        <button class="btn" style="width:100%" onclick="saveCfg()">Sincronizza & Salva</button>
+    </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const base = () => $('w-url').value.trim().replace(/\/$/, '');
+const fmt = (v, u) => (v == null ? '--' : `${v} ${u}`);
+let chartObj = null, recognition = null, isRecording = false;
+
+async function api(path, body) {
+    const t = $('w-token').value.trim();
+    const r = await fetch(base() + path, {
+        method: body ? 'POST' : 'GET',
+        headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(t ? { Authorization: 'Bearer ' + t } : {}) },
+        body: body ? JSON.stringify(body) : undefined
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+}
+
+$('cur-date').textContent = new Date().toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+
+// ---- Voce (STT del browser -> parser unico nel worker) ----
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+    recognition = new SR();
+    recognition.lang = 'it-IT'; recognition.continuous = false; recognition.interimResults = false;
+    recognition.onstart = () => { isRecording = true; $('mic-btn').classList.add('recording'); $('voice-status').textContent = 'In ascolto... Parla ora!'; };
+    recognition.onresult = (e) => { const t = e.results[0][0].transcript; $('voice-status').textContent = `Comando: "${t}"`; sendLog({ text: t }); };
+    recognition.onerror = () => { $('voice-status').textContent = 'Errore durante l\'ascolto. Riprova.'; stopVoiceUI(); };
+    recognition.onend = stopVoiceUI;
+} else { $('voice-status').textContent = 'Riconoscimento vocale non supportato da questo browser.'; }
+function toggleVoice() { if (!recognition) return; isRecording ? recognition.stop() : recognition.start(); }
+function stopVoiceUI() { isRecording = false; $('mic-btn').classList.remove('recording'); }
+function speakText(txt) {
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(txt); u.lang = 'it-IT'; speechSynthesis.speak(u);
+}
+async function sendLog(payload) {
+    try {
+        const r = await api('/api/log', payload);
+        $('voice-status').textContent = r.msg;
+        speakText(r.msg.replace(/[^\p{L}\p{N}\s.,:+]/gu, ''));
+        if (r.ok) sync();
+    } catch (e) {
+        $('voice-status').textContent = 'Salvataggio non riuscito: worker non raggiungibile o token errato.';
+    }
+}
+function logWater(ml) { sendLog({ type: 'water', value: ml }); }
+async function submitCheckin() {
+    try {
+        await api('/api/checkin', { sleep: +$('ci-sleep').value, hrv: +$('ci-hrv').value, stress: +$('ci-stress').value });
+        $('voice-status').textContent = 'Check-in salvato.'; sync();
+    } catch (e) { $('directive-text').textContent = 'Check-in non salvato: controlla URL e token.'; }
+}
+function logHobby(mins) { sendLog({ type: 'hobby', value: mins }); }
+
+// ---- Fotovoltaico ----
+function renderSolar(s) {
+    $('solar-pv-val').textContent = fmt(s.pvPowerkW, 'kW');
+    $('solar-batt-val').textContent = fmt(s.batterySoc, '%');
+    $('solar-load-val').textContent = fmt(s.loadPowerkW, 'kW');
+    $('solar-grid-val').textContent = fmt(s.gridPowerkW, 'kW');
+    const b = $('solar-live-badge');
+    b.textContent = s.isLive ? 'LIVE' : 'NON DISPONIBILE';
+    b.className = 'solar-badge ' + (s.isLive ? 'badge-live' : 'badge-sim');
+}
+async function pollSolar() {
+    if (document.hidden || !base()) return;
+    try { renderSolar(await api('/api/solar/live')); } catch (e) { console.warn('Polling FV fallito', e); }
+}
+
+// ---- Sync ----
+async function sync() {
+    if (!base()) return;
+    try {
+        const d = await api('/api/today');
+        $('readiness-val').innerHTML = `${d.readiness ?? '--'}<span>/100</span>`;
+        $('directive-text').textContent = d.brutalDirective || 'Nessun dato.';
+        $('pv-text').textContent = [d.pvAdvice, d.batteryStatus].filter(Boolean).join('\n');
+        $('garden-text').textContent = d.gardenAdvice || '';
+        $('creative-text').textContent = d.creativeAdvice || '';
+        if (d.bio) { $('s-val').textContent = d.bio.sleep; $('h-val').textContent = d.bio.hrv; $('st-val').textContent = d.bio.stress; }
+        if (d.solar) renderSolar(d.solar);
+        const ml = (d.logs || []).reduce((a, c) => a + (c.amount || 0), 0);
+        $('water-val').textContent = `${ml} / ${d.hydraTarget} ml`;
+        $('water-bar').style.width = Math.min(100, (ml / d.hydraTarget) * 100) + '%';
+        if (d.bio) { $('ci-sleep').value = d.bio.sleep; $('ci-hrv').value = d.bio.hrv; $('ci-stress').value = d.bio.stress; }
+        renderChart(await api('/api/history?days=7'));
+    } catch (e) {
+        $('directive-text').textContent = 'Sincronizzazione fallita: controlla URL e token del worker.';
+    }
+}
+function saveCfg() {
+    localStorage.setItem('mirror_url_v52', base());
+    localStorage.setItem('mirror_token_v54', $('w-token').value.trim());
+    sync(); pollSolar();
+}
+function renderChart(h) {
+    if (!window.Chart) return;
+    if (chartObj) chartObj.destroy();
+    chartObj = new Chart($('chart').getContext('2d'), {
+        type: 'line',
+        data: { labels: h.map((x) => x.date.slice(5)), datasets: [{ label: 'Readiness', data: h.map((x) => (x.data ? x.data.readiness : null)), borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.08)', fill: true, tension: 0.35, borderWidth: 2, pointRadius: 3, spanGaps: true }] },
+        options: { responsive: true, scales: { y: { min: 0, max: 100, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } }, plugins: { legend: { display: false } } }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    $('w-url').value = localStorage.getItem('mirror_url_v52') || '';
+    $('w-token').value = localStorage.getItem('mirror_token_v54') || '';
+    sync(); pollSolar();
+    setInterval(pollSolar, 3000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { pollSolar(); sync(); } });
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+});
+</script>
+</body>
+</html>
