@@ -1,29 +1,22 @@
-# Cognitive Ecosystem v5.4 (fixed)
+# Cognitive Core OS v17.1 Ultra Enterprise
 
-## Deploy worker
-1. `wrangler kv namespace create MORNING_KV` → incolla l'id in `wrangler.toml`
-2. Secret (`wrangler secret put NOME`):
-   - `API_TOKEN` (consigliato: protegge /api/*; stesso valore nel campo token della PWA)
-   - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET`
-   - `OPENAI_API_KEY` (vocali Whisper), `GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN` (calendario)
-3. `wrangler deploy`, poi registra il webhook:
-   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<WORKER_URL>/webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>`
-4. Pubblica la PWA (index.html, sw.js, manifest, icone) su HTTPS e inserisci URL worker + token.
+PWA local-first: micro-grid (telemetria dimostrativa), finanza, carte fedeltà con barcode, vault credenziali, TrenoLive e assistente AI.
 
-## Dati reali SunPower (il worker NON vede la tua LAN)
-- **A) Bridge locale (più semplice):** un Raspberry/Home Assistant/PC in casa legge il gateway e ogni 2-3 minuti fa
-  `POST <WORKER>/api/solar/push` con `Authorization: Bearer <API_TOKEN>` e JSON, es.
-  `{"pv_power":4200,"battery_power":900,"soc":96,"grid_power":-1800,"load_power":1500}` (Watt).
-  Convenzione: rete + = prelievo, batteria + = carica. Dati validi 6 minuti.
-  (Limite free KV: 1000 scritture/giorno, quindi non spingere più spesso di ogni 2 min.)
-- **B) Tunnel:** esponi il gateway con Cloudflare Tunnel/Tailscale Funnel e imposta `SUNPOWER_URL` (e `SUNPOWER_AUTH`).
-- Nomi campi accettati: pv_power/pac/solarPower, battery_power/p_battery, soc/battery_soc, grid_power/p_grid, load_power/p_load.
-  Se il tuo gateway usa altri nomi, mandami un esempio di JSON.
-- Senza dati la PWA mostra "NON DISPONIBILE" (niente più simulazioni).
+## Cosa fa l'assistente
+- **Senza API Key** (o offline): comandi locali — diagnosi, patrimonio/liquidità/investito, modalità inverter Auto.
+- **Con Gemini API Key** (Impostazioni): risposte libere con contesto della conversazione. Il modello è configurabile (default `gemini-flash-latest`); se la chiamata fallisce, l'errore è mostrato e si usa la risposta locale.
+- TTS in italiano con scelta della voce (salvata); dettatura vocale con il pulsante microfono. La wake word continua non è implementata.
 
-## Bridge e funzioni extra
-- `bridge/sunpower_bridge.py` (Python 3, nessuna dipendenza):
-  `GATEWAY_URL=http://192.168.1.100/api/v1/status WORKER_URL=https://... API_TOKEN=... python3 sunpower_bridge.py`
-  Se il JSON del gateway è annidato usa `FIELD_MAP="pv_power=data.pac,soc=data.battery.soc"`.
-- Avviso Telegram automatico (1 volta/giorno) quando la batteria è ≥95% in fascia 11:30-15:30: carica la BYD.
-- La PWA ha check-in mattutino e idratazione con barra di avanzamento (non serve più Telegram).
+## Struttura
+- `index.html`, `app.js`: interfaccia e logica.
+- `sw.js`: service worker (cache dell'app e delle librerie CDN dopo il primo avvio online).
+- `manifest.json`, `icon*.png`, `icon.svg`, `apple-touch-icon.png`: risorse PWA.
+- `workers/trenolive_proxy.js`: Worker Cloudflare per treni (`?treno=NUMERO`) e Morning Report Telegram (`?action=morning-report`, POST).
+
+## Configurazione del Worker
+Pubblica `workers/trenolive_proxy.js` e inserisci l'URL nelle Impostazioni. Per il Morning Report definisci nel Worker le variabili
+`TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID`; opzionale `APP_SECRET` (stesso valore nel campo "Segreto Worker").
+
+## Note
+- Il backup JSON non include API Key e segreto del Worker.
+- I dati restano nel `localStorage` del browser, non cifrati: non salvare password nel Vault.
